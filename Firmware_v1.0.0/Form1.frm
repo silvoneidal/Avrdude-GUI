@@ -284,19 +284,22 @@ Private Sub Form_Load()
     cboBoard.AddItem "Atmega328P"
     cboBoard.AddItem "ATtiny13"
     cboBoard.AddItem "ATtiny85"
-    cboBoard.Text = "Atmega8"
+    cboBoard.Text = "Atmega8" ' Board inicial
     
     ' Lista de Programador
     cboProg.AddItem "UsbAsp"
-    cboProg.AddItem "ArduinoISP"
-    cboProg.Text = "UsbAsp"
+    cboProg.AddItem "Arduino"
+    cboProg.Text = "UsbAsp" ' Programador inicial
     
+    ' Configuração inicial
     config(0) = cboBoard.Text
     config(1) = optUpload.Caption
     config(2) = cboProg.Text
     
     optUpload.Value = True
     txtFile.Locked = True
+    
+    ' Detecta portas disponíveis
     Call cmdPort_Click
    
 End Sub
@@ -358,7 +361,7 @@ Private Sub cboProg_Click()
    If cboProg.ListIndex = 0 Then
         prog = "usbasp" ' UsbAsp
    ElseIf cboProg.ListIndex = 1 Then
-        prog = "Arduino" ' ArduinoISP
+        prog = "Arduino" ' Arduino
    End If
    
    config(2) = cboProg.Text
@@ -456,7 +459,7 @@ Private Sub cmdUpload_Click()
     
     Call cboBoard_Click ' Busca a board selecionada
         
-    ' Upload conforme opção selecionada via programador arduinoisp (PROG328P v1.0)
+    ' Upload conforme opção selecionada via programador arduino (PROG328P v1.0)
     ' LOCK
     If optLock.Value = True Then
         Beep
