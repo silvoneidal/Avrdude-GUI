@@ -37,8 +37,8 @@ Begin VB.Form Form1
          Top             =   1920
          Width           =   1575
       End
-      Begin VB.OptionButton optUpload 
-         Caption         =   "Upload.hex"
+      Begin VB.OptionButton optSketch 
+         Caption         =   "Sketch.hex"
          BeginProperty Font 
             Name            =   "Consolas"
             Size            =   9.75
@@ -293,10 +293,10 @@ Private Sub Form_Load()
     
     ' Configuração inicial
     config(0) = cboBoard.Text
-    config(1) = optUpload.Caption
+    config(1) = optSketch.Caption
     config(2) = cboProg.Text
     
-    optUpload.Value = True
+    optSketch.Value = True
     txtFile.Locked = True
     
     ' Detecta portas disponíveis
@@ -344,12 +344,20 @@ End Sub
 Private Sub cboBoard_Click()
    If cboBoard.ListIndex = 0 Then
         board = "m8" ' Atmega8
+        optLock.ToolTipText = "LB:0xFF"
+        optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 1 Then
         board = "m328p" ' Atmega328P
+        optLock.ToolTipText = "LB:0xFF"
+        optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 2 Then
         board = "t13" ' ATtiny13
+        optLock.ToolTipText = "LB:0xFF"
+        optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 3 Then
         board = "t85" ' ATtiny85
+        optLock.ToolTipText = "LB:0xFF"
+        optUnlock.ToolTipText = "LB:0xCF"
    End If
    
    config(0) = cboBoard.Text
@@ -398,13 +406,13 @@ Private Sub optBootloader_Click()
     
 End Sub
 
-Private Sub optUpload_Click()
+Private Sub optSketch_Click()
     txtFile.Locked = False
     cmdFile.Enabled = True
     cmdUpload.Enabled = True
     txtFile.Text = Empty
     txtFile.ToolTipText = Empty
-    config(1) = optUpload.Caption
+    config(1) = optSketch.Caption
     
 End Sub
 
@@ -422,7 +430,7 @@ End Sub
 
 Private Sub cmdfile_Click()
     ' Define o filtro para exibir tipo de arquivos
-    If optUpload.Value = True Then
+    If optSketch.Value = True Then
         CommonDialog1.Filter = "Arquivos (*.hex)|*.hex"
     End If
     
@@ -466,7 +474,7 @@ Private Sub cmdUpload_Click()
         resposta = MsgBox("Você tem certeza que deseja usar a opção Lock (Bloqueo)", vbYesNo + vbExclamation, "DALÇÓQUIO AUTOMAÇÃO")
         If resposta = vbYes Then
             ' Define o comando para fazer o upload dos Fuses
-            uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lfuse:w:0xFF:m -U hfuse:w:0xDE:m -U efuse:w:0xFD:m"
+            'uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lfuse:w:0xFF:m -U hfuse:w:0xDE:m -U efuse:w:0xFD:m"
             ' Executa o comando de upload e abre a janela do prompt de comando
             Shell uploadCmd, vbNormalFocus
             
@@ -480,7 +488,7 @@ Private Sub cmdUpload_Click()
     ' UNLOCK
     If optUnlock.Value = True Then
         ' Define o comando para fazer o upload dos Fuses
-        uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lfuse:w:0xFF:m -U hfuse:w:0xDE:m -U efuse:w:0xFD:m"
+        'uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lfuse:w:0xFF:m -U hfuse:w:0xDE:m -U efuse:w:0xFD:m"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
         
@@ -498,8 +506,8 @@ Private Sub cmdUpload_Click()
         Shell uploadCmd, vbNormalFocus
     End If
 
-    ' UPLOAD.HEX
-    If optUpload.Value = True Then
+    ' SKETCH.HEX
+    If optSketch.Value = True Then
         ' Define o comando para fazer o upload do arquivo compilado
         uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
@@ -537,7 +545,7 @@ End Sub
 
 Private Sub Timer1_Timer()
     ' Se opçao carregar selecionada
-    If optUpload.Value = True Then
+    If optSketch.Value = True Then
         ' Verifica se arquivo em branco
         If txtFile.Text = Empty Then
             cmdUpload.Enabled = False
