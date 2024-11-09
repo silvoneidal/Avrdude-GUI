@@ -37,8 +37,8 @@ Begin VB.Form Form1
          Top             =   1920
          Width           =   1575
       End
-      Begin VB.OptionButton optCarregar 
-         Caption         =   "Carregar.hex"
+      Begin VB.OptionButton optUpload 
+         Caption         =   "Upload.hex"
          BeginProperty Font 
             Name            =   "Consolas"
             Size            =   9.75
@@ -113,7 +113,7 @@ Begin VB.Form Form1
       TabIndex        =   0
       Top             =   120
       Width           =   7815
-      Begin VB.TextBox txtSketch 
+      Begin VB.TextBox txtFile 
          BeginProperty Font 
             Name            =   "Courier New"
             Size            =   9.75
@@ -147,8 +147,8 @@ Begin VB.Form Form1
          Top             =   1560
          Width           =   7335
       End
-      Begin VB.CommandButton cmdSketch 
-         Caption         =   "Sketch"
+      Begin VB.CommandButton cmdFile 
+         Caption         =   "File"
          BeginProperty Font 
             Name            =   "Consolas"
             Size            =   9.75
@@ -292,11 +292,11 @@ Private Sub Form_Load()
     cboProg.Text = "UsbAsp"
     
     config(0) = cboBoard.Text
-    config(1) = optCarregar.Caption
+    config(1) = optUpload.Caption
     config(2) = cboProg.Text
     
-    optCarregar.Value = True
-    txtSketch.Locked = True
+    optUpload.Value = True
+    txtFile.Locked = True
     Call cmdPort_Click
    
 End Sub
@@ -356,9 +356,9 @@ End Sub
 
 Private Sub cboProg_Click()
    If cboProg.ListIndex = 0 Then
-        board = "usbasp" ' UsbAsp
+        prog = "usbasp" ' UsbAsp
    ElseIf cboProg.ListIndex = 1 Then
-        board = "Arduino" ' ArduinoISP
+        prog = "Arduino" ' ArduinoISP
    End If
    
    config(2) = cboProg.Text
@@ -366,54 +366,42 @@ Private Sub cboProg_Click()
 End Sub
 
 Private Sub optLock_Click()
-    cboBoard.Enabled = True
-    cboPort.Enabled = False
-    cmdPort.Enabled = False
-    txtSketch.Locked = True
-    cmdSketch.Enabled = False
+    txtFile.Locked = True
+    cmdFile.Enabled = False
     cmdUpload.Enabled = True
-    txtSketch.Text = Empty
-    txtSketch.ToolTipText = Empty
+    txtFile.Text = Empty
+    txtFile.ToolTipText = Empty
     config(1) = optLock.Caption
     
 End Sub
 
 Private Sub optUnlock_Click()
-    cboBoard.Enabled = True
-    cboPort.Enabled = False
-    cmdPort.Enabled = False
-    txtSketch.Locked = True
-    cmdSketch.Enabled = False
+    txtFile.Locked = True
+    cmdFile.Enabled = False
     cmdUpload.Enabled = True
-    txtSketch.Text = Empty
-    txtSketch.ToolTipText = Empty
+    txtFile.Text = Empty
+    txtFile.ToolTipText = Empty
     config(1) = optUnlock.Caption
     
 End Sub
 
 
 Private Sub optBootloader_Click()
-    cboBoard.Enabled = True
-    cboPort.Enabled = False
-    cmdPort.Enabled = False
-    txtSketch.Locked = True
-    cmdSketch.Enabled = False
+    txtFile.Locked = True
+    cmdFile.Enabled = False
     cmdUpload.Enabled = True
     Call setArquivo
     config(1) = optBootloader.Caption
     
 End Sub
 
-Private Sub optCarregar_Click()
-    cboBoard.Enabled = True
-    cboPort.Enabled = True
-    cmdPort.Enabled = True
-    txtSketch.Locked = False
-    cmdSketch.Enabled = True
+Private Sub optUpload_Click()
+    txtFile.Locked = False
+    cmdFile.Enabled = True
     cmdUpload.Enabled = True
-    txtSketch.Text = Empty
-    txtSketch.ToolTipText = Empty
-    config(1) = optCarregar.Caption
+    txtFile.Text = Empty
+    txtFile.ToolTipText = Empty
+    config(1) = optUpload.Caption
     
 End Sub
 
@@ -429,9 +417,9 @@ Private Sub Form_Unload(Cancel As Integer)
 
 End Sub
 
-Private Sub cmdSketch_Click()
+Private Sub cmdfile_Click()
     ' Define o filtro para exibir tipo de arquivos
-    If optCarregar.Value = True Then
+    If optUpload.Value = True Then
         CommonDialog1.Filter = "Arquivos (*.hex)|*.hex"
     End If
     
@@ -443,8 +431,8 @@ Private Sub cmdSketch_Click()
     filePath = CommonDialog1.FileName
     
     ' Exibe o caminho do arquivo no TextBox
-    txtSketch.Text = filePath
-    txtSketch.ToolTipText = txtSketch.Text
+    txtFile.Text = filePath
+    txtFile.ToolTipText = txtFile.Text
     
 End Sub
 
@@ -458,10 +446,13 @@ Private Sub cmdUpload_Click()
                       "Programador:  " & config(2), vbYesNo + vbQuestion, "DALÇÓQUIO AUTOMAÇÃO")
     If resposta = vbNo Then Exit Sub
     
-    
     Dim uploadCmd As String
-    Dim sketchPath As String
-    sketchPath = txtSketch.Text ' Carrega arquivo hex
+    Dim filePath As String
+    ' Carregar as variáveis de dependências
+    Call cboBoard_Click ' Board
+    Call cboPort_Click ' Porta
+    Call cboProg_Click ' Programador
+    filePath = txtFile.Text ' Arquivo.hex
     
     Call cboBoard_Click ' Busca a board selecionada
         
@@ -499,15 +490,15 @@ Private Sub cmdUpload_Click()
     ' BOOTLOADER
     If optBootloader.Value = True Then
         ' Define o comando para fazer o upload do arquivo compilado
-        uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 115200 -F -v -v -U flash:w:" & sketchPath & ":a"
+        uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
     End If
 
-    ' CARREGAR
-    If optCarregar.Value = True Then
+    ' UPLOAD.HEX
+    If optUpload.Value = True Then
         ' Define o comando para fazer o upload do arquivo compilado
-        uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 115200 -F -v -v -U flash:w:" & sketchPath & ":a"
+        uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
     End If
@@ -543,20 +534,20 @@ End Sub
 
 Private Sub Timer1_Timer()
     ' Se opçao carregar selecionada
-    If optCarregar.Value = True Then
+    If optUpload.Value = True Then
         ' Verifica se arquivo em branco
-        If txtSketch.Text = Empty Then
+        If txtFile.Text = Empty Then
             cmdUpload.Enabled = False
-            txtSketch.BackColor = vbYellow
+            txtFile.BackColor = vbYellow
         ' Verifica se porta em branco
         ElseIf cboPort.Text = Empty Then
             cmdUpload.Enabled = False
         Else
             cmdUpload.Enabled = True
-            txtSketch.BackColor = vbWhite
+            txtFile.BackColor = vbWhite
         End If
     Else
-        txtSketch.BackColor = vbWhite
+        txtFile.BackColor = vbWhite
     End If
     
     ' Se opção lock (bloqueo) selecionada
@@ -576,17 +567,17 @@ Private Sub setArquivo()
         Dim nomeArquivo As String
         Select Case cboBoard.ListIndex
             Case 0
-                txtSketch.Text = verificarArquivo("bootloader_atmega8.hex")
-                txtSketch.ToolTipText = txtSketch.Text
+                txtFile.Text = verificarArquivo("bootloader_atmega8.hex")
+                txtFile.ToolTipText = txtFile.Text
             Case 1
-                txtSketch.Text = verificarArquivo("bootloader_atmega328.hex")
-                txtSketch.ToolTipText = txtSketch.Text
+                txtFile.Text = verificarArquivo("bootloader_atmega328.hex")
+                txtFile.ToolTipText = txtFile.Text
             Case 2
-                txtSketch.Text = verificarArquivo("bootloader_attiny13.hex")
-                txtSketch.ToolTipText = txtSketch.Text
+                txtFile.Text = verificarArquivo("bootloader_attiny13.hex")
+                txtFile.ToolTipText = txtFile.Text
             Case 3
-                txtSketch.Text = verificarArquivo("bootloader_attiny85.hex")
-                txtSketch.ToolTipText = txtSketch.Text
+                txtFile.Text = verificarArquivo("bootloader_attiny85.hex")
+                txtFile.ToolTipText = txtFile.Text
         End Select
     End If
 
