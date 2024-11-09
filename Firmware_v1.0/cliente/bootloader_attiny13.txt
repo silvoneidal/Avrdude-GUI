@@ -1,0 +1,12 @@
+atmega8:
+avrdude.conf -v -patmega8 -cstk500v1 -PCOM7 -b19200 -e -Ulock:w:0x3F:m -Uefuse:w::m -Uhfuse:w:0xca:m -Ulfuse:w:0xdf:m
+
+atmega328p:
+avrdude.conf -v -patmega328p -cstk500v1 -PCOM7 -b19200 -e -Ulock:w:0x3F:m -Uefuse:w:0xFD:m -Uhfuse:w:0xDE:m -Ulfuse:w:0xFF:m
+
+attiny13:
+avrdude.conf -v -pattiny13 -cstk500v1 -PCOM7 -b19200 -e -Ulock:w:0x3F:m -Uhfuse:w:0b11111011:m -Ulfuse:w:0x7A:m 
+
+attiny85:
+avrdude.conf -v -pattiny85 -cstk500v1 -PCOM7 -b19200 -e -Ulock:w:0xFF:m -Uefuse:w:0xFE:m -Uhfuse:w:0b11011101:m -Ulfuse:w:0xE2:m 
+avrdude.conf -v -v -v -v -pattiny85 -cstk500v1 -PCOM7 -b19200 -e -Uefuse:w:0xff:m -Uhfuse:w:0xdf:m -Ulfuse:w:0xf1:m
