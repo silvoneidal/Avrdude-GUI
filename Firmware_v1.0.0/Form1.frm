@@ -344,19 +344,23 @@ End Sub
 Private Sub cboBoard_Click()
    If cboBoard.ListIndex = 0 Then
         board = "m8" ' Atmega8
-        optLock.ToolTipText = "LB:0xFF"
+        lockbit = "0x0C"
+        optLock.ToolTipText = "LB:0x0C"
         optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 1 Then
+        lockbit = "0x0C"
         board = "m328p" ' Atmega328P
-        optLock.ToolTipText = "LB:0xFF"
+        optLock.ToolTipText = "LB:0x0C"
         optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 2 Then
+        lockbit = "0x3C"
         board = "t13" ' ATtiny13
-        optLock.ToolTipText = "LB:0xFF"
+        optLock.ToolTipText = "LB:0x3C"
         optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 3 Then
+        lockbit = "0x3C"
         board = "t85" ' ATtiny85
-        optLock.ToolTipText = "LB:0xFF"
+        optLock.ToolTipText = "LB:0x3C"
         optUnlock.ToolTipText = "LB:0xCF"
    End If
    
@@ -460,26 +464,23 @@ Private Sub cmdUpload_Click()
     Dim uploadCmd As String
     Dim filePath As String
     ' Carregar as variáveis de dependências
-    Call cboBoard_Click ' Board
-    Call cboPort_Click ' Porta
-    Call cboProg_Click ' Programador
-    filePath = txtFile.Text ' Arquivo.hex
+    Call cboBoard_Click ' board e lockbit
+    Call cboPort_Click ' porta
+    Call cboProg_Click ' programador
+    filePath = txtFile.Text ' sketch.hex
     
     Call cboBoard_Click ' Busca a board selecionada
         
-    ' Upload conforme opção selecionada via programador arduino (PROG328P v1.0)
+    ' -------------------------------------------------------------------------------------------------------------------------------------------
+    ' CHATGPT: atemga8/328p: lock:0x0C unlock:0x3F  -  attiny13/85: lock:0x03C unlock:0x3F
+    ' -------------------------------------------------------------------------------------------------------------------------------------------
     ' LOCK
     If optLock.Value = True Then
         Beep
         resposta = MsgBox("Você tem certeza que deseja usar a opção Lock (Bloqueo)", vbYesNo + vbExclamation, "DALÇÓQUIO AUTOMAÇÃO")
         If resposta = vbYes Then
-            ' Define o comando para fazer o upload dos Fuses
-            'uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lfuse:w:0xFF:m -U hfuse:w:0xDE:m -U efuse:w:0xFD:m"
-            ' Executa o comando de upload e abre a janela do prompt de comando
-            Shell uploadCmd, vbNormalFocus
-            
             ' Define o comando para fazer o upload do lock bits
-            uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:0xFF:m"
+            uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:" & lockbit & ":m"
             ' Executa o comando de upload e abre a janela do prompt de comando
             Shell uploadCmd, vbNormalFocus
         End If
@@ -487,11 +488,6 @@ Private Sub cmdUpload_Click()
     
     ' UNLOCK
     If optUnlock.Value = True Then
-        ' Define o comando para fazer o upload dos Fuses
-        'uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lfuse:w:0xFF:m -U hfuse:w:0xDE:m -U efuse:w:0xFD:m"
-        ' Executa o comando de upload e abre a janela do prompt de comando
-        Shell uploadCmd, vbNormalFocus
-        
         ' Define o comando para fazer o upload do lock bits
         uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:0xCF:m"
         ' Executa o comando de upload e abre a janela do prompt de comando
@@ -513,33 +509,6 @@ Private Sub cmdUpload_Click()
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
     End If
-    
-    ' ---------------------------------------------------------------------------------------------------------------------------------
-    
-    ' Read Fuses
-    ' Unlock L:0xFF H:0xDE E:0xFD
-    ' avrdude -u -c arduino -p m328p -P COM7 -b 19200 -F -v -v -U hfuse:r:-:h -U lfuse:r:-:h -U efuse:r:-:h
-    
-    ' Write Fuses
-    ' Unlock L:0xFF H:0xDE E:0xFD
-    ' avrdude -u -c arduino -p m328p -P COM7 -b 19200 -F -v -v -U lfuse:w:0xFF:m -U hfuse:w:0xDE:m -U efuse:w:0xFD:m
-    
-    ' Read lock
-    ' Unlock LB:0xCF
-    ' avrdude -u -c arduino -p m328p -P COM7 -b 19200 -F -v -v -U lock:r:-:h
-    
-    ' Write lock
-    ' Unlock LB:0xCF
-    ' avrdude -u -c arduino -p m328p -P COM7 -b 19200 -F -v -v -U lock:w:0xCF:m
-    
-    ' Write lock Atenção !!!
-    ' Lock LB:0x
-    ' avrdude -u -c arduino -p m328p -P COM7 -b 19200 -F -v -v -U lock:w:0x:m
-
-    ' Comando Detect
-    ' avrdude -c arduino -p m328p -P COM7 -b 19200 -F -v -v
-    
-    ' ---------------------------------------------------------------------------------------------------------------------------------
     
 End Sub
 
@@ -610,4 +579,5 @@ Private Function verificarArquivo(nomeArquivo As String) As String
     End If
 
 End Function
+
 
