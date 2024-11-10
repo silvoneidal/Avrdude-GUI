@@ -33,8 +33,8 @@ Begin VB.Form Form1
          Height          =   345
          Left            =   240
          Style           =   2  'Dropdown List
-         TabIndex        =   12
-         Top             =   1920
+         TabIndex        =   11
+         Top             =   1800
          Width           =   1575
       End
       Begin VB.OptionButton optSketch 
@@ -50,25 +50,8 @@ Begin VB.Form Form1
          EndProperty
          Height          =   375
          Left            =   240
-         TabIndex        =   11
-         Top             =   1320
-         Width           =   1575
-      End
-      Begin VB.OptionButton optUnlock 
-         Caption         =   "UnLock"
-         BeginProperty Font 
-            Name            =   "Consolas"
-            Size            =   9.75
-            Charset         =   0
-            Weight          =   400
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         Height          =   375
-         Left            =   240
          TabIndex        =   10
-         Top             =   600
+         Top             =   1200
          Width           =   1575
       End
       Begin VB.OptionButton optBootloader 
@@ -85,7 +68,7 @@ Begin VB.Form Form1
          Height          =   375
          Left            =   240
          TabIndex        =   9
-         Top             =   960
+         Top             =   720
          Width           =   1575
       End
       Begin VB.OptionButton optLock 
@@ -272,6 +255,7 @@ Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Dim port As String
 Dim board As String
 Dim prog As String
+Dim lockbit As String
 Dim scan As Boolean
 Dim config(2) As String
 
@@ -346,22 +330,18 @@ Private Sub cboBoard_Click()
         board = "m8" ' Atmega8
         lockbit = "0x0C"
         optLock.ToolTipText = "LB:0x0C"
-        optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 1 Then
         lockbit = "0x0C"
         board = "m328p" ' Atmega328P
         optLock.ToolTipText = "LB:0x0C"
-        optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 2 Then
         lockbit = "0x3C"
         board = "t13" ' ATtiny13
         optLock.ToolTipText = "LB:0x3C"
-        optUnlock.ToolTipText = "LB:0xCF"
    ElseIf cboBoard.ListIndex = 3 Then
         lockbit = "0x3C"
         board = "t85" ' ATtiny85
         optLock.ToolTipText = "LB:0x3C"
-        optUnlock.ToolTipText = "LB:0xCF"
    End If
    
    config(0) = cboBoard.Text
@@ -389,17 +369,6 @@ Private Sub optLock_Click()
     config(1) = optLock.Caption
     
 End Sub
-
-Private Sub optUnlock_Click()
-    txtFile.Locked = True
-    cmdFile.Enabled = False
-    cmdUpload.Enabled = True
-    txtFile.Text = Empty
-    txtFile.ToolTipText = Empty
-    config(1) = optUnlock.Caption
-    
-End Sub
-
 
 Private Sub optBootloader_Click()
     txtFile.Locked = True
@@ -469,7 +438,7 @@ Private Sub cmdUpload_Click()
     Call cboProg_Click ' programador
     filePath = txtFile.Text ' sketch.hex
     
-    Call cboBoard_Click ' Busca a board selecionada
+    'Call cboBoard_Click ' Busca a board selecionada
         
     ' -------------------------------------------------------------------------------------------------------------------------------------------
     ' CHATGPT: atemga8/328p: lock:0x0C unlock:0x3F  -  attiny13/85: lock:0x03C unlock:0x3F
@@ -486,16 +455,17 @@ Private Sub cmdUpload_Click()
         End If
     End If
     
-    ' UNLOCK
-    If optUnlock.Value = True Then
-        ' Define o comando para fazer o upload do lock bits
-        uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:0xCF:m"
-        ' Executa o comando de upload e abre a janela do prompt de comando
-        Shell uploadCmd, vbNormalFocus
-    End If
-    
     ' BOOTLOADER
     If optBootloader.Value = True Then
+        ' Especialmente para attiny13
+        ' avrdude.conf -v -pattiny13 -cstk500v1 -PCOM7 -b19200 -e -Ulock:w:0x3F:m -Uhfuse:w:0b11111011:m -Ulfuse:w:0x7A:m
+        If cboBoard.ListIndex = 2 Then
+             ' Define o comando para fazer o upload do arquivo compilado
+            uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:0x3F:m -U hfuse:w:0b11111011:m -U lfuse:w:0x7A:m"
+            ' Executa o comando de upload e abre a janela do prompt de comando
+            Shell uploadCmd, vbNormalFocus
+            Exit Sub
+        End If
         ' Define o comando para fazer o upload do arquivo compilado
         uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
