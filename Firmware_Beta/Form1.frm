@@ -4,16 +4,34 @@ Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
 Begin VB.Form Form1 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "Desconectado"
-   ClientHeight    =   4995
+   ClientHeight    =   5385
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   10350
    Icon            =   "Form1.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
-   ScaleHeight     =   4995
+   ScaleHeight     =   5385
    ScaleWidth      =   10350
    StartUpPosition =   2  'CenterScreen
+   Begin VB.TextBox txtComando 
+      BackColor       =   &H00000000&
+      BeginProperty Font 
+         Name            =   "Courier New"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   360
+      Left            =   120
+      TabIndex        =   12
+      Top             =   4920
+      Width           =   10095
+   End
    Begin VB.Frame Frame2 
       Height          =   2535
       Left            =   8040
@@ -452,6 +470,7 @@ Private Sub cmdUpload_Click()
             uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:" & lockbit & ":m"
             ' Executa o comando de upload e abre a janela do prompt de comando
             Shell uploadCmd, vbNormalFocus
+            txtComando.Text = Mid(uploadCmd, 11, Len(uploadCmd))
         End If
     End If
     
@@ -464,12 +483,14 @@ Private Sub cmdUpload_Click()
             uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:0x3F:m -U hfuse:w:0b11111011:m -U lfuse:w:0x7A:m"
             ' Executa o comando de upload e abre a janela do prompt de comando
             Shell uploadCmd, vbNormalFocus
+            txtComando.Text = Mid(uploadCmd, 11, Len(uploadCmd))
             Exit Sub
         End If
         ' Define o comando para fazer o upload do arquivo compilado
         uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
+        txtComando.Text = Mid(uploadCmd, 11, Len(uploadCmd))
     End If
 
     ' SKETCH.HEX
@@ -478,9 +499,12 @@ Private Sub cmdUpload_Click()
         uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
+        txtComando.Text = Mid(uploadCmd, 11, Len(uploadCmd))
     End If
     
 End Sub
+
+
 
 Private Sub Timer1_Timer()
     ' Se opçao carregar selecionada
@@ -550,4 +574,14 @@ Private Function verificarArquivo(nomeArquivo As String) As String
 
 End Function
 
-
+Private Sub txtComando_KeyPress(KeyAscii As Integer)
+    If KeyAscii = 13 And txtComando <> Empty Then
+        Shell "cmd.exe /k " & txtComando.Text, vbNormalFocus
+    End If
+    
+    If KeyAscii = 1 Then
+        txtComando.SelStart = 0
+        txtComando.SelLength = Len(txtComando.Text)
+    End If
+    
+End Sub
