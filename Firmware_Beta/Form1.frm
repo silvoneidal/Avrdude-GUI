@@ -274,6 +274,7 @@ Dim port As String
 Dim board As String
 Dim prog As String
 Dim lockbit As String
+Dim fileBootloader As String
 Dim scan As Boolean
 Dim config(2) As String
 
@@ -293,8 +294,9 @@ Private Sub Form_Load()
     cboProg.AddItem "UsbAsp"
     cboProg.Text = "Arduino" ' Programador inicial
     
-    optBootloader.Value = True
+    optBootloader.Value = True ' Opção inicial
     txtFile.Locked = True
+    Call cboBoard_Click
     
     ' Detecta portas disponíveis
     Call cmdPort_Click
@@ -343,21 +345,23 @@ Private Sub cboBoard_Click()
         board = "m8" ' Atmega8
         lockbit = "0x0C"
         optLock.ToolTipText = "LB:0x0C"
+        fileBootloader = verificarArquivo("bootloader_atmega8.hex")
    ElseIf cboBoard.ListIndex = 1 Then
         lockbit = "0x0C"
         board = "m328p" ' Atmega328P
         optLock.ToolTipText = "LB:0x0C"
+        fileBootloader = verificarArquivo("bootloader_atmega328.hex")
    ElseIf cboBoard.ListIndex = 2 Then
         lockbit = "0x3C"
         board = "t13" ' ATtiny13
         optLock.ToolTipText = "LB:0x3C"
+        fileBootloader = verificarArquivo("bootloader_attiny13.hex")
    ElseIf cboBoard.ListIndex = 3 Then
         lockbit = "0x3C"
         board = "t85" ' ATtiny85
         optLock.ToolTipText = "LB:0x3C"
+        fileBootloader = verificarArquivo("bootloader_attiny85.hex")
    End If
-   
-   Call setArquivo
   
 End Sub
 
@@ -368,32 +372,6 @@ Private Sub cboProg_Click()
         prog = "usbasp" ' UsbAsp
    End If
    
-End Sub
-
-Private Sub optBootloader_Click()
-    txtFile.Locked = True
-    cmdFile.Enabled = False
-    cmdUpload.Enabled = True
-    Call setArquivo
-    
-End Sub
-
-Private Sub optSketch_Click()
-    txtFile.Locked = False
-    cmdFile.Enabled = True
-    cmdUpload.Enabled = True
-    txtFile.Text = Empty
-    txtFile.ToolTipText = Empty
-    
-End Sub
-
-Private Sub optLock_Click()
-    txtFile.Locked = True
-    cmdFile.Enabled = False
-    cmdUpload.Enabled = True
-    txtFile.Text = Empty
-    txtFile.ToolTipText = Empty
-    
 End Sub
 
 Private Sub msg_Box(mensagem As String)
@@ -434,12 +412,10 @@ Private Sub cmdUpload_Click()
     Call cboBoard_Click ' board e lockbit
     Call cboPort_Click ' porta
     Call cboProg_Click ' programador
-    filePath = txtFile.Text ' sketch.hex
     
     ' BOOTLOADER
     If optBootloader.Value = True Then
         ' Especialmente para attiny13
-        ' avrdude.conf -v -pattiny13 -cstk500v1 -PCOM7 -b19200 -e -Ulock:w:0x3F:m -Uhfuse:w:0b11111011:m -Ulfuse:w:0x7A:m
         If cboBoard.ListIndex = 2 Then
              ' Define o comando para fazer o upload do arquivo compilado
             uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:0x3F:m -U hfuse:w:0b11111011:m -U lfuse:w:0x7A:m"
@@ -448,6 +424,8 @@ Private Sub cmdUpload_Click()
             txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
             Exit Sub
         End If
+        ' Carrega arquivo para upload
+        filePath = fileBootloader ' Bootloader.hex
         ' Define o comando para fazer o upload do arquivo compilado
         uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
@@ -457,6 +435,8 @@ Private Sub cmdUpload_Click()
 
     ' SKETCH.HEX
     If optSketch.Value = True Then
+        ' Carrega arquivo para upload
+        filePath = txtFile.Text ' Sketch.hex
         ' Define o comando para fazer o upload do arquivo compilado
         uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
@@ -478,11 +458,17 @@ Private Sub cmdUpload_Click()
     
 End Sub
 
-
-
 Private Sub Timer1_Timer()
-    ' Se opçao carregar selecionada
+    ' Bootloader selecionado
+    If optBootloader.Value = True Then
+        cmdUpload.Enabled = True
+        cmdFile.Enabled = False
+        txtFile.BackColor = vbWhite
+    End If
+    
+    ' Sketch selecionado
     If optSketch.Value = True Then
+        cmdFile.Enabled = True
         ' Verifica se arquivo em branco
         If txtFile.Text = Empty Then
             cmdUpload.Enabled = False
@@ -494,12 +480,13 @@ Private Sub Timer1_Timer()
             cmdUpload.Enabled = True
             txtFile.BackColor = vbWhite
         End If
-    Else
-        txtFile.BackColor = vbWhite
     End If
     
-    ' Se opção lock (bloqueo) selecionada
+    ' Lock selecionado
     If optLock.Value = True Then
+        cmdUpload.Enabled = True
+        cmdFile.Enabled = False
+        txtFile.BackColor = vbWhite
         optLock.ForeColor = vbRed
         optLock.Font.Bold = True
     Else
@@ -507,28 +494,6 @@ Private Sub Timer1_Timer()
         optLock.Font.Bold = False
     End If
    
-End Sub
-
-Private Sub setArquivo()
-    ' Seleciona arquivos hexadecimais
-    If optBootloader.Value = True Then
-        Dim nomeArquivo As String
-        Select Case cboBoard.ListIndex
-            Case 0
-                txtFile.Text = verificarArquivo("bootloader_atmega8.hex")
-                txtFile.ToolTipText = txtFile.Text
-            Case 1
-                txtFile.Text = verificarArquivo("bootloader_atmega328.hex")
-                txtFile.ToolTipText = txtFile.Text
-            Case 2
-                txtFile.Text = verificarArquivo("bootloader_attiny13.hex")
-                txtFile.ToolTipText = txtFile.Text
-            Case 3
-                txtFile.Text = verificarArquivo("bootloader_attiny85.hex")
-                txtFile.ToolTipText = txtFile.Text
-        End Select
-    End If
-
 End Sub
 
 Private Function verificarArquivo(nomeArquivo As String) As String
