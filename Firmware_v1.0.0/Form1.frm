@@ -4,16 +4,34 @@ Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
 Begin VB.Form Form1 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "Desconectado"
-   ClientHeight    =   4995
+   ClientHeight    =   5385
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   10350
    Icon            =   "Form1.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
-   ScaleHeight     =   4995
+   ScaleHeight     =   5385
    ScaleWidth      =   10350
    StartUpPosition =   2  'CenterScreen
+   Begin VB.TextBox txtComando 
+      BackColor       =   &H00000000&
+      BeginProperty Font 
+         Name            =   "Courier New"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   360
+      Left            =   120
+      TabIndex        =   12
+      Top             =   4920
+      Width           =   10095
+   End
    Begin VB.Frame Frame2 
       Height          =   2535
       Left            =   8040
@@ -51,7 +69,7 @@ Begin VB.Form Form1
          Height          =   375
          Left            =   240
          TabIndex        =   10
-         Top             =   1200
+         Top             =   720
          Width           =   1575
       End
       Begin VB.OptionButton optBootloader 
@@ -68,7 +86,7 @@ Begin VB.Form Form1
          Height          =   375
          Left            =   240
          TabIndex        =   9
-         Top             =   720
+         Top             =   240
          Width           =   1575
       End
       Begin VB.OptionButton optLock 
@@ -86,7 +104,7 @@ Begin VB.Form Form1
          Height          =   375
          Left            =   240
          TabIndex        =   8
-         Top             =   240
+         Top             =   1200
          Width           =   1575
       End
    End
@@ -201,14 +219,14 @@ Begin VB.Form Form1
    End
    Begin MSComDlg.CommonDialog CommonDialog1 
       Left            =   960
-      Top             =   3960
+      Top             =   4080
       _ExtentX        =   847
       _ExtentY        =   847
       _Version        =   393216
    End
    Begin MSCommLib.MSComm MSComm1 
       Left            =   240
-      Top             =   3840
+      Top             =   4080
       _ExtentX        =   1005
       _ExtentY        =   1005
       _Version        =   393216
@@ -219,7 +237,7 @@ Begin VB.Form Form1
    Begin VB.Timer Timer1 
       Interval        =   1000
       Left            =   1560
-      Top             =   3960
+      Top             =   4080
    End
    Begin VB.Image Image1 
       Height          =   1905
@@ -271,16 +289,11 @@ Private Sub Form_Load()
     cboBoard.Text = "Atmega8" ' Board inicial
     
     ' Lista de Programador
-    cboProg.AddItem "UsbAsp"
     cboProg.AddItem "Arduino"
-    cboProg.Text = "UsbAsp" ' Programador inicial
+    cboProg.AddItem "UsbAsp"
+    cboProg.Text = "Arduino" ' Programador inicial
     
-    ' Configuração inicial
-    config(0) = cboBoard.Text
-    config(1) = optSketch.Caption
-    config(2) = cboProg.Text
-    
-    optSketch.Value = True
+    optBootloader.Value = True
     txtFile.Locked = True
     
     ' Detecta portas disponíveis
@@ -291,7 +304,7 @@ End Sub
 Private Sub scanPort()
    cboPort.Clear
    Dim i As Integer
-   For i = 1 To 16 'Procura portas COM de 1 a 16
+   For i = 1 To 32 'Procura portas COM de 1 a 16
       MSComm1.CommPort = i
       On Error Resume Next 'ignora o tratamento de erro
       MSComm1.PortOpen = True 'tenta abrir a porta
@@ -344,30 +357,17 @@ Private Sub cboBoard_Click()
         optLock.ToolTipText = "LB:0x3C"
    End If
    
-   config(0) = cboBoard.Text
    Call setArquivo
   
 End Sub
 
 Private Sub cboProg_Click()
    If cboProg.ListIndex = 0 Then
-        prog = "usbasp" ' UsbAsp
-   ElseIf cboProg.ListIndex = 1 Then
         prog = "Arduino" ' Arduino
+   ElseIf cboProg.ListIndex = 1 Then
+        prog = "usbasp" ' UsbAsp
    End If
    
-   config(2) = cboProg.Text
-   
-End Sub
-
-Private Sub optLock_Click()
-    txtFile.Locked = True
-    cmdFile.Enabled = False
-    cmdUpload.Enabled = True
-    txtFile.Text = Empty
-    txtFile.ToolTipText = Empty
-    config(1) = optLock.Caption
-    
 End Sub
 
 Private Sub optBootloader_Click()
@@ -375,7 +375,6 @@ Private Sub optBootloader_Click()
     cmdFile.Enabled = False
     cmdUpload.Enabled = True
     Call setArquivo
-    config(1) = optBootloader.Caption
     
 End Sub
 
@@ -385,7 +384,15 @@ Private Sub optSketch_Click()
     cmdUpload.Enabled = True
     txtFile.Text = Empty
     txtFile.ToolTipText = Empty
-    config(1) = optSketch.Caption
+    
+End Sub
+
+Private Sub optLock_Click()
+    txtFile.Locked = True
+    cmdFile.Enabled = False
+    cmdUpload.Enabled = True
+    txtFile.Text = Empty
+    txtFile.ToolTipText = Empty
     
 End Sub
 
@@ -421,15 +428,6 @@ Private Sub cmdfile_Click()
 End Sub
 
 Private Sub cmdUpload_Click()
-    ' Aguarda confirmação do usuário
-    Beep
-    Dim resposta As Integer
-    resposta = MsgBox("Fazer upload nessas configurações: " & vbCrLf & _
-                      "Board: " & config(0) & vbCrLf & _
-                      "Comando: " & config(1) & vbCrLf & _
-                      "Programador:  " & config(2), vbYesNo + vbQuestion, "DALÇÓQUIO AUTOMAÇÃO")
-    If resposta = vbNo Then Exit Sub
-    
     Dim uploadCmd As String
     Dim filePath As String
     ' Carregar as variáveis de dependências
@@ -437,23 +435,6 @@ Private Sub cmdUpload_Click()
     Call cboPort_Click ' porta
     Call cboProg_Click ' programador
     filePath = txtFile.Text ' sketch.hex
-    
-    'Call cboBoard_Click ' Busca a board selecionada
-        
-    ' -------------------------------------------------------------------------------------------------------------------------------------------
-    ' CHATGPT: atemga8/328p: lock:0x0C unlock:0x3F  -  attiny13/85: lock:0x03C unlock:0x3F
-    ' -------------------------------------------------------------------------------------------------------------------------------------------
-    ' LOCK
-    If optLock.Value = True Then
-        Beep
-        resposta = MsgBox("Você tem certeza que deseja usar a opção Lock (Bloqueo)", vbYesNo + vbExclamation, "DALÇÓQUIO AUTOMAÇÃO")
-        If resposta = vbYes Then
-            ' Define o comando para fazer o upload do lock bits
-            uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:" & lockbit & ":m"
-            ' Executa o comando de upload e abre a janela do prompt de comando
-            Shell uploadCmd, vbNormalFocus
-        End If
-    End If
     
     ' BOOTLOADER
     If optBootloader.Value = True Then
@@ -464,12 +445,14 @@ Private Sub cmdUpload_Click()
             uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:0x3F:m -U hfuse:w:0b11111011:m -U lfuse:w:0x7A:m"
             ' Executa o comando de upload e abre a janela do prompt de comando
             Shell uploadCmd, vbNormalFocus
+            txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
             Exit Sub
         End If
         ' Define o comando para fazer o upload do arquivo compilado
         uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
+        txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
     End If
 
     ' SKETCH.HEX
@@ -478,9 +461,24 @@ Private Sub cmdUpload_Click()
         uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
+        txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
+    End If
+    
+     ' -------------------------------------------------------------------------------------------------------------------------------------------
+    ' CHATGPT: atemga8/328p: lock:0x0C unlock:0x3F  -  attiny13/85: lock:0x03C unlock:0x3F
+    ' -------------------------------------------------------------------------------------------------------------------------------------------
+    ' LOCK
+    If optLock.Value = True Then
+        ' Define o comando para fazer o upload do lock bits
+        uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:" & lockbit & ":m"
+        ' Executa o comando de upload e abre a janela do prompt de comando
+        Shell uploadCmd, vbNormalFocus
+        txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
     End If
     
 End Sub
+
+
 
 Private Sub Timer1_Timer()
     ' Se opçao carregar selecionada
@@ -550,4 +548,19 @@ Private Function verificarArquivo(nomeArquivo As String) As String
 
 End Function
 
+Private Sub txtComando_Change()
+    txtComando.ToolTipText = txtComando.Text
+    
+End Sub
 
+Private Sub txtComando_KeyPress(KeyAscii As Integer)
+    If KeyAscii = 13 And txtComando <> Empty Then
+        Shell "cmd.exe /k " & txtComando.Text, vbNormalFocus
+    End If
+    
+    If KeyAscii = 1 Then
+        txtComando.SelStart = 0
+        txtComando.SelLength = Len(txtComando.Text)
+    End If
+    
+End Sub
