@@ -306,7 +306,7 @@ End Sub
 Private Sub scanPort()
    cboPort.Clear
    Dim i As Integer
-   For i = 1 To 32 'Procura portas COM de 1 a 16
+   For i = 1 To 16 'Procura portas COM de 1 a 16
       MSComm1.CommPort = i
       On Error Resume Next 'ignora o tratamento de erro
       MSComm1.PortOpen = True 'tenta abrir a porta
