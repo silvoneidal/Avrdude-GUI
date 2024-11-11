@@ -357,9 +357,9 @@ Private Sub cboBoard_Click()
         optLock.ToolTipText = "LB:0x3C"
         fileBootloader = verificarArquivo("bootloader_attiny13.hex")
    ElseIf cboBoard.ListIndex = 3 Then
-        lockbit = "0x3C"
+        lockbit = "0xFC"
         board = "t85" ' ATtiny85
-        optLock.ToolTipText = "LB:0x3C"
+        optLock.ToolTipText = "LB:0xFC"
         fileBootloader = verificarArquivo("bootloader_attiny85.hex")
    End If
   
