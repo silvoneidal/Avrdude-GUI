@@ -283,11 +283,11 @@ Private Sub Form_Load()
     Me.Caption = App.Title & " v" & App.Major & "." & App.Minor & "." & App.Revision
        
     ' Lista de Board
+    cboBoard.AddItem "Atmega328"
     cboBoard.AddItem "Atmega8"
-    cboBoard.AddItem "Atmega328P"
     cboBoard.AddItem "ATtiny13"
     cboBoard.AddItem "ATtiny85"
-    cboBoard.Text = "Atmega8" ' Board inicial
+    cboBoard.Text = "Atmega328" ' Board inicial
     
     ' Lista de Programador
     cboProg.AddItem "Arduino"
@@ -342,13 +342,13 @@ End Sub
 
 Private Sub cboBoard_Click()
    If cboBoard.ListIndex = 0 Then
-        board = "m8" ' Atmega8
+        board = "m328p" ' Atmega328
         lockbit = "0x0C"
         optLock.ToolTipText = "LB:0x0C"
         fileBootloader = verificarArquivo("bootloader_atmega8.hex")
    ElseIf cboBoard.ListIndex = 1 Then
         lockbit = "0x0C"
-        board = "m328p" ' Atmega328P
+        board = "m8" ' Atmega8
         optLock.ToolTipText = "LB:0x0C"
         fileBootloader = verificarArquivo("bootloader_atmega328.hex")
    ElseIf cboBoard.ListIndex = 2 Then
