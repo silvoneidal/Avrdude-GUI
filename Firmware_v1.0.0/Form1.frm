@@ -235,7 +235,7 @@ Begin VB.Form Form1
       RThreshold      =   1
    End
    Begin VB.Timer Timer1 
-      Interval        =   1000
+      Interval        =   500
       Left            =   1560
       Top             =   4080
    End
@@ -270,11 +270,12 @@ Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (B
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 
 ' Variável global
-Dim port As String
-Dim board As String
-Dim prog As String
-Dim lockbit As String
-Dim fileBootloader As String
+Dim upload_port As String
+Dim upload_baud As String
+Dim upload_chip As String
+Dim upload_prog As String
+Dim upload_lock As String
+Dim file_bootloader As String
 Dim scan As Boolean
 Dim config(2) As String
 
@@ -282,17 +283,18 @@ Private Sub Form_Load()
     ' Barra de Titulo
     Me.Caption = App.Title & " v" & App.Major & "." & App.Minor & "." & App.Revision
        
-    ' Lista de Board
+    ' Lista de chip
     cboBoard.AddItem "Atmega328"
     cboBoard.AddItem "Atmega8"
     cboBoard.AddItem "ATtiny13"
     cboBoard.AddItem "ATtiny85"
-    cboBoard.Text = "Atmega328" ' Board inicial
+    cboBoard.Text = "Atmega328" ' chip inicial
     
     ' Lista de Programador
+    cboProg.AddItem "ArduinoISP"
     cboProg.AddItem "Arduino"
     cboProg.AddItem "UsbAsp"
-    cboProg.Text = "Arduino" ' Programador inicial
+    cboProg.Text = "ArduinoISP" ' Programador inicial
     
     optBootloader.Value = True ' Opção inicial
     txtFile.Locked = True
@@ -336,40 +338,42 @@ Private Sub cmdPort_Click()
 End Sub
 
 Private Sub cboPort_Click()
-   port = cboPort.Text
+   upload_port = cboPort.Text
    
 End Sub
 
 Private Sub cboBoard_Click()
    If cboBoard.ListIndex = 0 Then
-        board = "m328p" ' Atmega328
-        lockbit = "0x0C"
+        upload_chip = "m328p" ' Atmega328
+        upload_lock = "0x0C"
         optLock.ToolTipText = "LB:0x0C"
-        fileBootloader = verificarArquivo("bootloader_atmega8.hex")
+        file_bootloader = verificarArquivo("bootloader_atmega8.hex")
    ElseIf cboBoard.ListIndex = 1 Then
-        lockbit = "0x0C"
-        board = "m8" ' Atmega8
+        upload_lock = "0x0C"
+        upload_chip = "m8" ' Atmega8
         optLock.ToolTipText = "LB:0x0C"
-        fileBootloader = verificarArquivo("bootloader_atmega328.hex")
+        file_bootloader = verificarArquivo("bootloader_atmega328.hex")
    ElseIf cboBoard.ListIndex = 2 Then
-        lockbit = "0x3C"
-        board = "t13" ' ATtiny13
+        upload_lock = "0x3C"
+        upload_chip = "t13" ' ATtiny13
         optLock.ToolTipText = "LB:0x3C"
-        fileBootloader = verificarArquivo("bootloader_attiny13.hex")
+        file_bootloader = verificarArquivo("bootloader_attiny13.hex")
    ElseIf cboBoard.ListIndex = 3 Then
-        lockbit = "0xFC"
-        board = "t85" ' ATtiny85
+        upload_lock = "0xFC"
+        upload_chip = "t85" ' ATtiny85
         optLock.ToolTipText = "LB:0xFC"
-        fileBootloader = verificarArquivo("bootloader_attiny85.hex")
+        file_bootloader = verificarArquivo("bootloader_attiny85.hex")
    End If
   
 End Sub
 
 Private Sub cboProg_Click()
    If cboProg.ListIndex = 0 Then
-        prog = "Arduino" ' Arduino
+        upload_prog = "Arduino" ' ArduinoISP
    ElseIf cboProg.ListIndex = 1 Then
-        prog = "usbasp" ' UsbAsp
+        upload_prog = "Arduino" ' Arduino
+   ElseIf cboProg.ListIndex = 2 Then
+        upload_prog = "usbasp" ' UsbAsp
    End If
    
 End Sub
@@ -409,7 +413,7 @@ Private Sub cmdUpload_Click()
     Dim uploadCmd As String
     Dim filePath As String
     ' Carregar as variáveis de dependências
-    Call cboBoard_Click ' board e lockbit
+    Call cboBoard_Click ' chip e lockbit
     Call cboPort_Click ' porta
     Call cboProg_Click ' programador
     
@@ -418,16 +422,16 @@ Private Sub cmdUpload_Click()
         ' Especialmente para attiny13
         If cboBoard.ListIndex = 2 Then
              ' Define o comando para fazer o upload do arquivo compilado
-            uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:0x3F:m -U hfuse:w:0b11111011:m -U lfuse:w:0x7A:m"
+            uploadCmd = "cmd.exe /k avrdude -u -c " & upload_prog & " -p " & upload_chip & " -P " & upload_port & " -b 19200 -F -v -v -U lock:w:0x3F:m -U hfuse:w:0b11111011:m -U lfuse:w:0x7A:m"
             ' Executa o comando de upload e abre a janela do prompt de comando
             Shell uploadCmd, vbNormalFocus
             txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
             Exit Sub
         End If
         ' Carrega arquivo para upload
-        filePath = fileBootloader ' Bootloader.hex
+        filePath = file_bootloader ' Bootloader.hex
         ' Define o comando para fazer o upload do arquivo compilado
-        uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
+        uploadCmd = "cmd.exe /k avrdude -c " & upload_prog & " -p " & upload_chip & " -P " & upload_port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
         txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
@@ -438,7 +442,7 @@ Private Sub cmdUpload_Click()
         ' Carrega arquivo para upload
         filePath = txtFile.Text ' Sketch.hex
         ' Define o comando para fazer o upload do arquivo compilado
-        uploadCmd = "cmd.exe /k avrdude -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U flash:w:" & filePath & ":a"
+        uploadCmd = "cmd.exe /k avrdude -c " & upload_prog & " -p " & upload_chip & " -P " & upload_port & " -b upload_baud -F -v -v -U flash:w:" & filePath & ":a"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
         txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
@@ -450,7 +454,7 @@ Private Sub cmdUpload_Click()
     ' LOCK
     If optLock.Value = True Then
         ' Define o comando para fazer o upload do lock bits
-        uploadCmd = "cmd.exe /k avrdude -u -c " & prog & " -p " & board & " -P " & port & " -b 19200 -F -v -v -U lock:w:" & lockbit & ":m"
+        uploadCmd = "cmd.exe /k avrdude -u -c " & upload_prog & " -p " & upload_chip & " -P " & upload_port & " -b 19200 -F -v -v -U lock:w:" & upload_lock & ":m"
         ' Executa o comando de upload e abre a janela do prompt de comando
         Shell uploadCmd, vbNormalFocus
         txtComando.Text = Mid(uploadCmd, 12, Len(uploadCmd))
@@ -492,6 +496,12 @@ Private Sub Timer1_Timer()
     Else
         optLock.ForeColor = vbBlack
         optLock.Font.Bold = False
+    End If
+    
+    ' Programador selecionado
+    If cboProg.Text = "Arduino" Then
+        optBootloader.Value = False
+        optLock.Value = False
     End If
    
 End Sub
